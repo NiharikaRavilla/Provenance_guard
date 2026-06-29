@@ -11,6 +11,10 @@ def get_connection():
     return conn
 
 
+def current_timestamp():
+    return datetime.now(timezone.utc).isoformat()
+
+
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
@@ -28,6 +32,20 @@ def init_db():
             signal_json TEXT NOT NULL,
             status TEXT NOT NULL,
             created_at TEXT NOT NULL
+        )
+        """
+    )
+
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS appeals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content_id TEXT NOT NULL,
+            creator_id TEXT,
+            creator_reasoning TEXT NOT NULL,
+            status TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (content_id) REFERENCES content_decisions(id)
         )
         """
     )
@@ -59,7 +77,7 @@ def save_content_decision(
     signal_data,
     status="classified",
 ):
-    created_at = datetime.now(timezone.utc).isoformat()
+    created_at = current_timestamp()
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -98,8 +116,94 @@ def save_content_decision(
     conn.close()
 
 
+def get_content_decision(content_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT *
+        FROM content_decisions
+        WHERE id = ?
+        """,
+        (content_id,),
+    )
+
+    row = cursor.fetchone()
+    conn.close()
+
+    if row is None:
+        return None
+
+    return {
+        "id": row["id"],
+        "creator_id": row["creator_id"],
+        "title": row["title"],
+        "content": row["content"],
+        "attribution": row["attribution"],
+        "confidence": row["confidence"],
+        "label": row["label"],
+        "signals": json.loads(row["signal_json"]),
+        "status": row["status"],
+        "created_at": row["created_at"],
+    }
+
+
+def update_content_status(content_id, new_status):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        UPDATE content_decisions
+        SET status = ?
+        WHERE id = ?
+        """,
+        (new_status, content_id),
+    )
+
+    conn.commit()
+    updated_count = cursor.rowcount
+    conn.close()
+
+    return updated_count > 0
+
+
+def save_appeal(content_id, creator_id, creator_reasoning, status="under_review"):
+    created_at = current_timestamp()
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO appeals (
+            content_id,
+            creator_id,
+            creator_reasoning,
+            status,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            content_id,
+            creator_id,
+            creator_reasoning,
+            status,
+            created_at,
+        ),
+    )
+
+    appeal_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    return appeal_id
+
+
 def write_audit_log(event_type, content_id, event_data):
-    created_at = datetime.now(timezone.utc).isoformat()
+    created_at = current_timestamp()
 
     conn = get_connection()
     cursor = conn.cursor()
