@@ -2,8 +2,9 @@ from flask import Flask, jsonify, request
 from uuid import uuid4
 
 from db import init_db, save_content_decision, write_audit_log, get_recent_logs
-from detector import classify_with_groq, convert_signal_to_attribution
-from labels import get_placeholder_label
+from detector import classify_with_groq, combine_signal_scores
+from stylometry import analyze_stylometry
+from labels import get_transparency_label
 
 app = Flask(__name__)
 
@@ -44,12 +45,17 @@ def submit_content():
     content_id = str(uuid4())
 
     llm_signal = classify_with_groq(text)
-    attribution = convert_signal_to_attribution(llm_signal)
-    confidence = llm_signal["confidence"]
-    label = get_placeholder_label(attribution)
+    stylometric_signal = analyze_stylometry(text)
+    scoring = combine_signal_scores(llm_signal, stylometric_signal)
+
+    attribution = scoring["attribution"]
+    confidence = scoring["confidence"]
+    label = get_transparency_label(attribution)
 
     signal_data = {
-        "llm_signal": llm_signal
+        "llm_signal": llm_signal,
+        "stylometric_signal": stylometric_signal,
+        "combined_scoring": scoring
     }
 
     save_content_decision(
@@ -69,8 +75,11 @@ def submit_content():
         "creator_id": creator_id,
         "attribution": attribution,
         "confidence": confidence,
-        "llm_score": llm_signal["ai_likelihood"],
+        "llm_score": scoring["llm_score"],
+        "stylometric_score": scoring["stylometric_score"],
         "llm_classification": llm_signal["classification"],
+        "stylometric_classification": stylometric_signal["classification"],
+        "weights": scoring["weights"],
         "status": "classified"
     }
 

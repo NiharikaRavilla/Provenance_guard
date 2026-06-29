@@ -6,27 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def _parse_model_json(raw_output):
-    cleaned = raw_output.strip()
-
-    if cleaned.startswith("```"):
-        lines = cleaned.splitlines()
-        if lines and lines[0].strip().startswith("```"):
-            lines = lines[1:]
-        if lines and lines[-1].strip() == "```":
-            lines = lines[:-1]
-        cleaned = "\n".join(lines).strip()
-
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        start = cleaned.find("{")
-        end = cleaned.rfind("}")
-        if start != -1 and end != -1 and end > start:
-            return json.loads(cleaned[start:end + 1])
-        raise
-
-
 def classify_with_groq(text):
     """
     First detection signal.
@@ -96,7 +75,7 @@ Text to analyze:
         )
 
         raw_output = response.choices[0].message.content.strip()
-        parsed = _parse_model_json(raw_output)
+        parsed = json.loads(raw_output)
 
         classification = parsed.get("classification", "uncertain").lower()
         confidence = float(parsed.get("confidence", 0.5))
@@ -130,13 +109,34 @@ Text to analyze:
         }
 
 
-def convert_signal_to_attribution(signal_result):
-    ai_likelihood = signal_result["ai_likelihood"]
+def combine_signal_scores(llm_signal, stylometric_signal):
+    """
+    Combines both signal scores using the Milestone 2 spec.
 
-    if ai_likelihood >= 0.70:
-        return "likely_ai"
+    Final AI-likelihood score =
+    LLM AI-likelihood * 0.60 + Stylometric AI-likelihood * 0.40
+    """
 
-    if ai_likelihood <= 0.39:
-        return "likely_human"
+    llm_score = float(llm_signal["ai_likelihood"])
+    stylometric_score = float(stylometric_signal["ai_likelihood"])
 
-    return "uncertain"
+    combined_score = (llm_score * 0.60) + (stylometric_score * 0.40)
+    combined_score = round(combined_score, 2)
+
+    if combined_score >= 0.70:
+        attribution = "likely_ai"
+    elif combined_score <= 0.39:
+        attribution = "likely_human"
+    else:
+        attribution = "uncertain"
+
+    return {
+        "attribution": attribution,
+        "confidence": combined_score,
+        "llm_score": round(llm_score, 2),
+        "stylometric_score": round(stylometric_score, 2),
+        "weights": {
+            "llm_signal": 0.60,
+            "stylometric_signal": 0.40
+        }
+    }
