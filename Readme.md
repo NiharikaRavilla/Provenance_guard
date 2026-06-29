@@ -2,15 +2,15 @@
 
 ## **Project Overview**
 
-**Provenance Guard** is a Flask backend system that analyzes submitted creative text and returns an attribution label: **likely AI-generated**, **likely human-written**, or **uncertain**.
+**Provenance Guard** is a Flask backend system that analyzes submitted creative text and returns an attribution result: **likely AI-generated**, **likely human-written**, or **uncertain**.
 
-The purpose of this project is not to prove who wrote something. AI detection is imperfect, and falsely labeling a real creator's work as AI-generated can cause harm. Because of that, this system uses multiple signals, shows a confidence score, keeps an uncertain middle range, logs every decision, and gives creators a way to appeal.
+The goal of this project is not to prove who wrote a piece of text. AI detection is imperfect, and falsely labeling a real creator’s work as AI-generated can cause harm. Because of that, this system uses multiple signals, shows a confidence score, keeps an uncertain middle range, logs every decision, and gives creators a way to appeal.
 
 ---
 
 ## **1. Features Implemented**
 
-### **Core Features**
+### **1.1 Required Features**
 
 - **Content submission endpoint**
 - **Two-signal detection pipeline**
@@ -20,11 +20,15 @@ The purpose of this project is not to prove who wrote something. AI detection is
 - **Rate limiting**
 - **Structured audit logging**
 
+### **1.2 Project Focus**
+
+This project focuses on building a backend attribution system that is transparent, reviewable, and cautious about uncertainty. The system does not make final claims about authorship. It gives attribution context and gives creators a path to challenge automated results.
+
 ---
 
 ## **2. Tech Stack**
 
-### **Backend Tools**
+### **2.1 Backend Tools**
 
 - **Python**
 - **Flask**
@@ -32,7 +36,7 @@ The purpose of this project is not to prove who wrote something. AI detection is
 - **Flask-Limiter**
 - **python-dotenv**
 
-### **AI Tooling**
+### **2.2 AI Tooling**
 
 - **Groq API**
 - **Model:** `llama-3.3-70b-versatile`
@@ -41,54 +45,91 @@ The purpose of this project is not to prove who wrote something. AI detection is
 
 ## **3. Setup Instructions**
 
-### **Create a Virtual Environment**
+### **3.1 Create a Virtual Environment**
 
 ```bash
 python -m venv .venv
-Activate the Virtual Environment
+```
 
-Windows PowerShell
+### **3.2 Activate the Virtual Environment**
 
+#### **Windows PowerShell**
+
+```powershell
 .\.venv\Scripts\Activate.ps1
+```
 
-Mac/Linux
+#### **Mac/Linux**
 
+```bash
 source .venv/bin/activate
-Install Dependencies
+```
+
+### **3.3 Install Dependencies**
+
+```bash
 pip install -r requirements.txt
-Create Environment File
+```
 
-Create a .env file in the project root.
+### **3.4 Create the Environment File**
 
+Create a file named `.env` in the project root.
+
+```text
 GROQ_API_KEY=your_key_here
-Run the App
+```
+
+### **3.5 Run the App**
+
+```bash
 python app.py
+```
 
-The API runs locally at:
+### **3.6 Local API URL**
 
+```text
 http://localhost:5000
-4. API Endpoints
-4.1 GET /
-Purpose
+```
+
+---
+
+## **4. API Endpoints**
+
+## **4.1 GET `/`**
+
+### **Purpose**
 
 This endpoint checks whether the API is running.
 
-Example Response
+### **Example Response**
+
+```json
 {
   "message": "Provenance Guard API is running",
   "status": "ok"
 }
-4.2 POST /submit
-Purpose
+```
+
+---
+
+## **4.2 POST `/submit`**
+
+### **Purpose**
 
 This endpoint accepts a piece of creative text and returns an attribution result, confidence score, transparency label, and signal details.
 
-Example Request
+### **Example Request**
+
+```json
 {
   "creator_id": "label-test-ai-strong",
   "text": "In today's rapidly evolving digital landscape, it is important to note that artificial intelligence has become a transformative force across numerous industries. Furthermore, organizations can leverage AI-powered solutions to streamline workflows, enhance productivity, and unlock new opportunities for innovation. In conclusion, by embracing responsible deployment and considering ethical implications, stakeholders can ensure that artificial intelligence continues to shape the future in a positive and meaningful way."
 }
-Example Response from Testing
+```
+
+### **Example Response from Testing**
+
+```json
 {
   "attribution": "likely_ai",
   "confidence": 0.75,
@@ -131,30 +172,48 @@ Example Response from Testing
   "status": "classified",
   "title": "Untitled"
 }
-4.3 POST /appeal
-Purpose
+```
+
+---
+
+## **4.3 POST `/appeal`**
+
+### **Purpose**
 
 This endpoint allows a creator to appeal a classification decision.
 
-Example Request
+### **Example Request**
+
+```json
 {
   "content_id": "962dd0c8-ba3c-4676-a973-439444aec717",
   "creator_id": "label-test-human",
   "creator_reasoning": "I wrote this myself from personal experience. I am a non-native English speaker and my writing style may appear more formal than typical."
 }
-Example Response
+```
+
+### **Example Response**
+
+```json
 {
   "appeal_id": 1,
   "content_id": "962dd0c8-ba3c-4676-a973-439444aec717",
   "message": "Appeal submitted successfully. The content status has been updated to under_review.",
   "status": "under_review"
 }
-4.4 GET /log
-Purpose
+```
+
+---
+
+## **4.4 GET `/log`**
+
+### **Purpose**
 
 This endpoint returns recent structured audit log entries.
 
-Example Response Shape
+### **Example Response Shape**
+
+```json
 {
   "entries": [
     {
@@ -200,11 +259,21 @@ Example Response Shape
     }
   ]
 }
-5. Architecture Overview
-Submission Flow
+```
 
-A submission starts when a creator sends text to POST /submit. The Flask API validates the request, sends the text through two detection signals, combines their scores, generates a transparency label, saves the decision, writes an audit log entry, and returns the result as JSON.
+---
 
+## **5. Architecture Overview**
+
+## **5.1 Submission Flow**
+
+### **Narrative**
+
+A submission starts when a creator sends text to **`POST /submit`**. The Flask API validates the request, sends the text through two detection signals, combines their scores, generates a transparency label, saves the decision, writes an audit log entry, and returns the result as JSON.
+
+### **Diagram**
+
+```text
 Client
   |
   | POST /submit
@@ -240,10 +309,19 @@ Audit Log
   | classification event
   v
 JSON Response
-Appeal Flow
+```
 
-The appeal flow starts when a creator sends a content ID and explanation to POST /appeal. The system checks that the original content exists, saves the appeal, updates the content status to under_review, logs the appeal, and returns a confirmation response.
+---
 
+## **5.2 Appeal Flow**
+
+### **Narrative**
+
+The appeal flow starts when a creator sends a content ID and explanation to **`POST /appeal`**. The system checks that the original content exists, saves the appeal, updates the content status to **`under_review`**, logs the appeal, and returns a confirmation response.
+
+### **Diagram**
+
+```text
 Creator
   |
   | POST /appeal
@@ -267,57 +345,74 @@ Audit Log
   | appeal event
   v
 JSON Response
-6. Detection Signals
-6.1 Signal 1: Groq LLM Classifier
-What It Measures
+```
 
-The first signal uses Groq with llama-3.3-70b-versatile. It looks for overall writing patterns that may suggest AI-generated or human-written text.
+---
+
+## **6. Detection Signals**
+
+## **6.1 Signal 1: Groq LLM Classifier**
+
+### **What It Measures**
+
+The first signal uses Groq with **`llama-3.3-70b-versatile`**. It looks for overall writing patterns that may suggest AI-generated or human-written text.
 
 It checks for:
 
-Generic polished wording
-Predictable transitions
-Broad claims without personal detail
-Phrases like “it is important to note,” “furthermore,” and “in conclusion”
-Casual, personal, uneven, or specific human-like writing
-Why I Chose It
+- **Generic polished wording**
+- **Predictable transitions**
+- **Broad claims without personal detail**
+- **Phrases like “it is important to note,” “furthermore,” and “in conclusion”**
+- **Casual, personal, uneven, or specific human-like writing**
+
+### **Why I Chose It**
 
 I chose this signal because an LLM can evaluate tone, style, and meaning better than a simple formula. It can notice whether a passage sounds like a generic generated essay or like a specific personal experience.
 
-What It Misses
+### **What It Misses**
 
 This signal cannot prove who wrote the text. It may mistake polished human writing for AI-generated writing, and it may miss AI-generated text that was heavily edited by a person. It can also be sensitive to prompt wording.
 
-Example LLM Output
+### **Example LLM Output**
+
+```json
 {
   "classification": "ai",
   "confidence": 0.95,
   "ai_likelihood": 0.95,
   "reason": "Generic polished explanation with corporate-sounding filler and predictable transitions."
 }
-6.2 Signal 2: Stylometric Heuristics
-What It Measures
+```
+
+---
+
+## **6.2 Signal 2: Stylometric Heuristics**
+
+### **What It Measures**
 
 The second signal uses Python calculations to measure writing structure.
 
 It measures:
 
-Word count
-Sentence count
-Average sentence length
-Sentence length variance
-Type-token ratio
-Punctuation density
-Repetition ratio
-Why I Chose It
+- **Word count**
+- **Sentence count**
+- **Average sentence length**
+- **Sentence length variance**
+- **Type-token ratio**
+- **Punctuation density**
+- **Repetition ratio**
+
+### **Why I Chose It**
 
 I chose this signal because it gives a different kind of evidence than the LLM. Instead of judging meaning or tone, it measures the structure of the text. AI-generated text can sometimes have smoother and more uniform patterns, while human writing often has more uneven rhythm.
 
-What It Misses
+### **What It Misses**
 
 Stylometry does not understand meaning. It performs poorly on short text and can misread poems, lyrics, or intentionally repetitive writing. It may also treat simple human writing as suspicious.
 
-Example Stylometric Output
+### **Example Stylometric Output**
+
+```json
 {
   "classification": "human",
   "confidence": 0.7,
@@ -333,148 +428,221 @@ Example Stylometric Output
   },
   "reason": "varied sentence lengths, high vocabulary diversity, low punctuation variation, low repetition"
 }
-7. Confidence Scoring
-Score Meaning
+```
 
-Each signal returns an ai_likelihood score between 0.0 and 1.0.
+---
 
+## **7. Confidence Scoring**
+
+## **7.1 Score Meaning**
+
+Each signal returns an **`ai_likelihood`** score between **`0.0`** and **`1.0`**.
+
+```text
 0.0 = strongly human-likely
 0.5 = uncertain or mixed evidence
 1.0 = strongly AI-likely
-Score Formula
+```
+
+## **7.2 Score Formula**
 
 The final score is a weighted average:
 
+```text
 final_score = (llm_ai_likelihood * 0.60) + (stylometric_ai_likelihood * 0.40)
-Why This Formula
+```
+
+## **7.3 Why This Formula**
 
 I gave the LLM signal more weight because it can evaluate style and meaning. I still gave the stylometric signal 40 percent because it provides independent structural evidence.
 
-Thresholds
-Final Score	Result
-0.00 to 0.39	likely_human
-0.40 to 0.69	uncertain
-0.70 to 1.00	likely_ai
+## **7.4 Thresholds**
 
-I intentionally did not use 0.50 as the cutoff for AI-generated. A false positive can hurt a real creator, so the system requires stronger evidence before showing the likely AI label.
+| **Final Score** | **Result** |
+|---|---|
+| **0.00 to 0.39** | **`likely_human`** |
+| **0.40 to 0.69** | **`uncertain`** |
+| **0.70 to 1.00** | **`likely_ai`** |
 
-8. Confidence Validation
-High-Confidence AI Example
-Input
+I intentionally did not use **`0.50`** as the cutoff for AI-generated. A false positive can hurt a real creator, so the system requires stronger evidence before showing the likely AI label.
+
+---
+
+## **8. Confidence Validation**
+
+## **8.1 High-Confidence AI Example**
+
+### **Input**
+
+```text
 In today's rapidly evolving digital landscape, it is important to note that artificial intelligence has become a transformative force across numerous industries. Furthermore, organizations can leverage AI-powered solutions to streamline workflows, enhance productivity, and unlock new opportunities for innovation. In conclusion, by embracing responsible deployment and considering ethical implications, stakeholders can ensure that artificial intelligence continues to shape the future in a positive and meaningful way.
-Actual Output Summary
+```
+
+### **Actual Output Summary**
+
+```json
 {
   "attribution": "likely_ai",
   "confidence": 0.75,
   "llm_score": 0.95,
   "stylometric_score": 0.45
 }
-Explanation
+```
 
-This was labeled likely AI-generated because the LLM signal strongly detected generic AI-style phrasing. The stylometric signal was only uncertain, but the weighted score still crossed the 0.70 threshold.
+### **Explanation**
 
-High-Confidence Human Example
-Input
+This was labeled likely AI-generated because the LLM signal strongly detected generic AI-style phrasing. The stylometric signal was only uncertain, but the weighted score still crossed the **0.70** threshold.
+
+---
+
+## **8.2 High-Confidence Human Example**
+
+### **Input**
+
+```text
 ok so i finally tried that new ramen place downtown and honestly? underwhelming. the broth was fine but they put WAY too much sodium in it and i was thirsty for like three hours after. my friend got the spicy version and said it was better. probably won't go back unless someone drags me there
-Actual Output Summary
+```
+
+### **Actual Output Summary**
+
+```json
 {
   "attribution": "likely_human",
   "confidence": 0.17,
   "llm_score": 0.09,
   "stylometric_score": 0.30
 }
-Explanation
+```
+
+### **Explanation**
 
 This was labeled likely human-written because both signals leaned human. The LLM detected casual phrasing and personal experience, while the stylometric signal found varied sentence lengths and high vocabulary diversity.
 
-Lower-Confidence / Uncertain Example
-Input
+---
+
+## **8.3 Lower-Confidence / Uncertain Example**
+
+### **Input**
+
+```text
 The essay was revised several times after using an outline generated by an AI tool. Some sentences were rewritten by hand, while others still follow a fairly polished and predictable structure. The final version has a mix of personal edits and generic explanations.
-Actual Output Summary
+```
+
+### **Actual Output Summary**
+
+```json
 {
   "attribution": "uncertain",
   "confidence": 0.46,
   "llm_score": 0.30,
   "stylometric_score": 0.70
 }
-Explanation
+```
+
+### **Explanation**
 
 This was labeled uncertain because the two signals disagreed. The LLM leaned human, but stylometry saw AI-like sentence uniformity. This is the kind of case where the system should avoid making a strong claim.
 
-9. Transparency Labels
+---
+
+## **9. Transparency Labels**
+
+## **9.1 Label Variants**
 
 The system returns one of three exact transparency labels.
 
-Variant	Exact Text
-High-confidence AI	"Likely AI-generated: Our system found strong signals that this content may have been generated by AI. This label is based on automated analysis and may be appealed by the creator."
-High-confidence human	"Likely human-written: Our system found strong signals that this content was written by a person. This label is based on automated analysis and is not a guarantee of authorship."
-Uncertain	"Attribution uncertain: Our system found mixed signals about whether this piece was AI-generated or human-written. This label is not a final judgment, and the creator may appeal."
+| **Variant** | **Exact Text** |
+|---|---|
+| **High-confidence AI** | `"Likely AI-generated: Our system found strong signals that this content may have been generated by AI. This label is based on automated analysis and may be appealed by the creator."` |
+| **High-confidence human** | `"Likely human-written: Our system found strong signals that this content was written by a person. This label is based on automated analysis and is not a guarantee of authorship."` |
+| **Uncertain** | `"Attribution uncertain: Our system found mixed signals about whether this piece was AI-generated or human-written. This label is not a final judgment, and the creator may appeal."` |
 
-The labels avoid saying “definitely AI-generated” or “definitely human-written” because the system is only giving attribution context, not proof.
+## **9.2 Label Design Reasoning**
 
-10. Appeals Workflow
-Who Can Appeal
+The labels avoid saying **“definitely AI-generated”** or **“definitely human-written”** because the system is only giving attribution context, not proof.
 
-A creator can appeal a classification by sending the content ID and their reasoning to POST /appeal.
+---
 
-What the Appeal Includes
+## **10. Appeals Workflow**
+
+## **10.1 Who Can Appeal**
+
+A creator can appeal a classification by sending the content ID and their reasoning to **`POST /appeal`**.
+
+## **10.2 What the Appeal Includes**
+
+```json
 {
   "content_id": "962dd0c8-ba3c-4676-a973-439444aec717",
   "creator_id": "label-test-human",
   "creator_reasoning": "I wrote this myself from personal experience. I am a non-native English speaker and my writing style may appear more formal than typical."
 }
-What the System Does
+```
+
+## **10.3 What the System Does**
 
 When the appeal is received, the system:
 
-Checks that the content ID exists
-Saves the appeal
-Updates the content status to under_review
-Writes the appeal to the audit log
-Returns a confirmation response
-Actual Appeal Response
+1. **Checks that the content ID exists**
+2. **Saves the appeal**
+3. **Updates the content status to `under_review`**
+4. **Writes the appeal to the audit log**
+5. **Returns a confirmation response**
+
+## **10.4 Actual Appeal Response**
+
+```json
 {
   "appeal_id": 1,
   "content_id": "962dd0c8-ba3c-4676-a973-439444aec717",
   "message": "Appeal submitted successfully. The content status has been updated to under_review.",
   "status": "under_review"
 }
-11. Audit Log
-Purpose
+```
+
+---
+
+## **11. Audit Log**
+
+## **11.1 Purpose**
 
 The audit log makes every classification and appeal reviewable. This matters because automated attribution decisions should not be treated as invisible or final.
 
-Classification Log Fields
+## **11.2 Classification Log Fields**
 
 For classification decisions, the audit log records:
 
-Timestamp
-Content ID
-Creator ID
-Attribution result
-Final confidence score
-LLM score
-Stylometric score
-Signal classifications
-Label text
-Status
-Whether an appeal has been filed
-Appeal Log Fields
+- **Timestamp**
+- **Content ID**
+- **Creator ID**
+- **Attribution result**
+- **Final confidence score**
+- **LLM score**
+- **Stylometric score**
+- **Signal classifications**
+- **Label text**
+- **Status**
+- **Whether an appeal has been filed**
+
+## **11.3 Appeal Log Fields**
 
 For appeals, the audit log records:
 
-Timestamp
-Content ID
-Creator ID
-Appeal ID
-Appeal reasoning
-Original attribution
-Original confidence
-Original label
-Original signal outputs
-Previous status
-New status
-Example Classification Entry
+- **Timestamp**
+- **Content ID**
+- **Creator ID**
+- **Appeal ID**
+- **Appeal reasoning**
+- **Original attribution**
+- **Original confidence**
+- **Original label**
+- **Original signal outputs**
+- **Previous status**
+- **New status**
+
+## **11.4 Example Classification Entry**
+
+```json
 {
   "event_type": "classification",
   "content_id": "495d16d6-3ba6-4b05-8ff9-5438f007fe39",
@@ -490,7 +658,11 @@ Example Classification Entry
   "appeal_filed": false,
   "status": "classified"
 }
-Example Appeal Entry
+```
+
+## **11.5 Example Appeal Entry**
+
+```json
 {
   "event_type": "appeal",
   "content_id": "962dd0c8-ba3c-4676-a973-439444aec717",
@@ -504,18 +676,28 @@ Example Appeal Entry
   "status": "under_review",
   "appeal_filed": true
 }
-12. Rate Limiting
-Chosen Limits
+```
 
-The /submit endpoint is rate limited using Flask-Limiter.
+---
 
+## **12. Rate Limiting**
+
+## **12.1 Chosen Limits**
+
+The **`/submit`** endpoint is rate limited using Flask-Limiter.
+
+```text
 10 submissions per minute per IP
 100 submissions per day per IP
-Reasoning
+```
+
+## **12.2 Reasoning**
 
 I chose these limits because a normal creator probably will not submit more than a few pieces in one minute. The per-minute limit helps stop scripts from flooding the endpoint. The daily limit still allows normal testing and active platform use.
 
-Rate Limit Test Output
+## **12.3 Rate Limit Test Output**
+
+```text
 201
 201
 201
@@ -528,56 +710,72 @@ Rate Limit Test Output
 201
 429
 429
+```
 
-The first 10 requests were accepted with 201 Created. Requests 11 and 12 were blocked with 429 Too Many Requests.
+The first 10 requests were accepted with **`201 Created`**. Requests 11 and 12 were blocked with **`429 Too Many Requests`**.
 
-13. Known Limitations
-Repetitive Poetry
+---
 
-One specific weak case is poetry with repetition.
+## **13. Known Limitations**
 
+## **13.1 Repetitive Poetry**
+
+One specific weak case is **poetry with repetition**.
+
+```text
 I waited.
 I waited.
 The rain waited too.
+```
 
 A human could write this intentionally for rhythm or style, but the stylometric signal may treat repetition and simple structure as suspicious.
 
-Polished Human Writing
+## **13.2 Polished Human Writing**
 
-Another weak case is polished human writing. A skilled human writer may write in a smooth, formal, essay-like style. The LLM may confuse that with AI-generated text because it can contain balanced structure and generic transitions.
+Another weak case is **polished human writing**. A skilled human writer may write in a smooth, formal, essay-like style. The LLM may confuse that with AI-generated text because it can contain balanced structure and generic transitions.
 
-Short Text
+## **13.3 Short Text**
 
 Short text is also difficult. If someone submits only a few lines, there may not be enough data for sentence length variance or vocabulary diversity to be meaningful.
 
-14. Spec Reflection
-How the Spec Helped
+---
 
-The planning spec helped me most with the confidence score. Before coding, I had already decided that scores from 0.40 to 0.69 should be uncertain. That made the implementation clearer because I was not inventing thresholds while writing the route logic.
+## **14. Spec Reflection**
 
-How the Implementation Diverged
+## **14.1 How the Spec Helped**
 
-One place the implementation diverged from the spec was the Groq prompt. My first prompt was too general. During testing, the model classified obvious AI-style text as human. I revised the prompt to give more specific signs of AI-like writing, such as generic polished explanations, predictable transitions, and phrases like “it is important to note” and “in conclusion.”
+The planning spec helped me most with the confidence score. Before coding, I had already decided that scores from **`0.40` to `0.69`** should be uncertain. That made the implementation clearer because I was not inventing thresholds while writing the route logic.
 
-15. AI Usage
+## **14.2 How the Implementation Diverged**
 
-I used AI assistance, but I reviewed and changed the output instead of pasting it blindly.
+One place the implementation diverged from the spec was the **Groq prompt**. My first prompt was too general. During testing, the model classified obvious AI-style text as human. I revised the prompt to give more specific signs of AI-like writing, such as generic polished explanations, predictable transitions, and phrases like **“it is important to note”** and **“in conclusion.”**
 
-Instance 1: Flask App and Endpoint Structure
+---
 
-I directed AI to generate a Flask app skeleton with POST /submit, GET /log, and basic SQLite helpers. It produced a useful starting structure. I revised the response fields to match my own API plan, especially content_id, attribution, confidence, label, signals, and status.
+## **15. AI Usage**
 
-Instance 2: Stylometric Signal and Scoring Logic
+## **15.1 Instance 1: Flask App and Endpoint Structure**
+
+I directed AI to generate a Flask app skeleton with **`POST /submit`**, **`GET /log`**, and basic SQLite helpers. It produced a useful starting structure. I revised the response fields to match my own API plan, especially **`content_id`**, **`attribution`**, **`confidence`**, **`label`**, **`signals`**, and **`status`**.
+
+## **15.2 Instance 2: Stylometric Signal and Scoring Logic**
 
 I directed AI to generate a second signal using stylometric heuristics and a weighted scoring function. I checked the generated logic against my planning document and made sure it used the formula:
 
+```text
 final_score = (llm_ai_likelihood * 0.60) + (stylometric_ai_likelihood * 0.40)
+```
 
 I also made sure the thresholds stayed as:
 
+```text
 0.00 to 0.39 = likely_human
 0.40 to 0.69 = uncertain
 0.70 to 1.00 = likely_ai
-Instance 3: Debugging Groq JSON and Prompt Behavior
+```
+
+## **15.3 Instance 3: Debugging Groq JSON and Prompt Behavior**
 
 I directed AI to help debug the Groq parsing issue when the model output was not valid JSON. I revised the detector to extract JSON more safely and changed the prompt to ask for plain JSON with no markdown. I also overrode the original prompt because it was too conservative during testing.
+
+---
